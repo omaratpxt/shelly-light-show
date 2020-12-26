@@ -15,6 +15,7 @@ const getJSON = function(url, callback) {
 
 let canvas = document.getElementById("audio_visual");
 const ipRange = '192.168.0';
+const threshold = 128; // max 256 / 2
 let channels;
 
 getJSON('./channels.json',
@@ -95,7 +96,6 @@ function(err, data) {
 
         return channel >= channels.length ? channels.length - 1 : channel;
     }
-    let maxValue = 0;
     function draw(audioData) {
         audioData = [...audioData]
         ctx.clearRect(0,0,canvas.width,canvas.height);
@@ -104,7 +104,7 @@ function(err, data) {
         audioData.forEach((value,i) => {
             let channel = calculateChannel(i);
             
-            throttle(lights, 50, channel, (value >= channels[channel].thershold));
+            throttle(lights, 50, channel, (value >= (channels[channel].threshold || threshold)));
 
             ctx.beginPath();
             ctx.moveTo(space*i,canvas.height); //x,y

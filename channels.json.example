@@ -2,31 +2,31 @@
     {
         "ip": "11",
         "color": "#DC143C",
-        "thershold": 165,
+        "threshold": 165,
         "name": "room-1"
     },
     {
         "ip": "12",
         "color": "#FFA500",
-        "thershold": 160,
+        "threshold": 160,
         "name": "room-2"
     },
     {
         "ip": "13",
         "color": "#228B22",
-        "thershold": 130,
+        "threshold": 130,
         "name": "room-3"
     },
     {
         "ip": "14",
         "color": "#00FF7F",
-        "thershold": 127,
+        "threshold": 127,
         "name": "room-4"
     },
     {
         "ip": "15",
         "color": "#1E90FF",
-        "thershold": 100,
+        "threshold": 100,
         "name": "room-5"
     }
 ]
