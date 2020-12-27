@@ -1,9 +1,44 @@
 <html>
-    <head></head>
+    <head>
+        <link rel="stylesheet" type="text/css" href="assets/css/normalize.css" />
+        <link rel="stylesheet" type="text/css" href="assets/css/skeleton.css" />
+        <link rel="stylesheet" type="text/css" href="assets/css/custom.css" />
+    </head>
     <body>
-        <audio controls crossorigin="anonymous" id="source" src="./highway-to-hell.mp3"></audio>
-        <br />
-        <canvas id="audio_visual" height="280" width="1400"></canvas>
-        <script src="index.js"></script>
+        <!-- .container is main centered wrapper -->
+        <div class="container u-full-width u-max-full-width" id="main-container">
+            <div class="row">
+                <div class="eight columns">
+                    <label for="list-of-songs">Choose a song:</label>
+                    <select class="u-full-width" id="list-of-songs"></select>
+                </div>
+                <div class="four columns">
+                    <label>
+                        <input id="replay-songs-list" type="checkbox" checked />
+                        <span class="label-body">Replay</span>
+                    </label>
+                </div>
+            </div>
+            <!-- columns should be the immediate child of a .row -->
+            <div class="row">
+                <div class="twelve columns">
+                    <audio controls crossorigin="anonymous" id="source"></audio>
+                </div>
+            </div>
+            <div class="row">
+                <div class="twelve columns">
+                    <canvas id="audio-visual" style="width: 100%; height: 300px;"></canvas>
+                </div>
+            </div>
+            <div class="row">
+                <div class="twelve columns">
+                    <label>
+                        <input id="activate-lights-show" type="checkbox" checked />
+                        <span class="label-body">Activate lights show</span>
+                    </label>
+                </div>
+            </div>
+        </div>
+        <script src="./assets/js/index.js"></script>
     </body>
 </html>

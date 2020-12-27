@@ -1,4 +1,5 @@
 .vscode
 .data
 channels.json
+songs.json
 *.mp3

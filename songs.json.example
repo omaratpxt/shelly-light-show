@@ -1,0 +1,14 @@
+[
+    {
+        "name": "Highway to hell",
+        "src": "./highway-to-hell.mp3"
+    },
+    {
+        "name": "Bella Ciao",
+        "src": "./bella-ciao.mp3"
+    },
+    {
+        "name": "Der Kuckuck und der Esel",
+        "src": "./der-kuckuck-und-der-esel.mp3"
+    }
+]

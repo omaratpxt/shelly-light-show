@@ -2,10 +2,12 @@ version: '3.3'
 
 services:
   nginx:
-    image: nginx:1.18-alpine
+    image: nginx:1.19-alpine
     volumes:
-      - ./nginx.conf:/etc/nginx/nginx.conf
-      - .:/var/www/html:cached
-      - ./.data/logs/nginx:/var/log/nginx
+      - .:/usr/share/nginx/html:cached
+      - ./.data/logs/nginx:/var/log/nginx:delegated
+      - ./.data/cache/nginx:/var/cache/nginx:cached
+      - ./.docker/nginx/templates:/etc/nginx/templates:cached
     ports:
       - 80:80
+    command: [nginx-debug, '-g', 'daemon off;']
