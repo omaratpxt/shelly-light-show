@@ -9,6 +9,13 @@ Please feel free to check the source code and use it for your light show.
 ## Info
 If any bugs found just let me know
 
+## How to configure?
+### Define channels
+Create a config.json from config.json.example. Currently only shelly1, shell1pm and shelly dimmer2 are supported and tested.
+
+### Define songs
+Creae a songs.json from songs.json.example.
+
 ## How to use?
 
 ### With docker

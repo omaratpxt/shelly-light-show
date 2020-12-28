@@ -1,12 +1,35 @@
 const canvas = document.getElementById("audio-visual");
 const debug = true;
-const ipRange = '192.168.0';
 const threshold = 0; // max 256 / 2
 const analyserSize = 2048;
 const maxAudioFrequency = 280;
 const audioElement = document.getElementById("source");
 const songsSelectorElement = document.getElementById('list-of-songs');
 const AudioContext = window.AudioContext || window.webkitAudioContext;
+const shellyEndPoints = {
+    relay: {
+        endpoint: 'relay',
+        aliases: ['shelly1', 'shelly1pm']
+    },
+    light: {
+        endpoint: 'light',
+        aliases: ['dimmer2']
+    }
+};
+
+let shellyEndPointsMap = {};
+for (item in shellyEndPoints) {
+    shellyEndPointsMap[item] = item;
+    for (alias in shellyEndPoints[item].aliases) {
+        shellyEndPointsMap[shellyEndPoints[item].aliases[alias]] = item;
+    }
+}
+/**
+ * Alias keys for shelly end points
+ */
+function shellyEndPoint(item) {
+    return shellyEndPoints[shellyEndPointsMap[item]].endpoint;
+}
 
 fetch('./songs.json')
 .then(response => response.json())
@@ -46,14 +69,16 @@ fetch('./songs.json')
     let lastStatus = [];
     let statusHistory = [];
     let debugDivElements = [];
-    let channelValuesSum, channelValuesCount, 
+    let ipRangePrefix, channels, channelValuesSum, channelValuesCount, 
         lastCalculatedChannel, percentFactor,
         debugDivElementsContainer;
     
 
-    fetch('./channels.json')
+    fetch('./config.json')
     .then(response => response.json())
-    .then(channels => {
+    .then(data => {
+        channels = data.channels;
+        ipRangePrefix = data.ipRangePrefix;
         percentFactor = 100 / channels.length;
         createDebugElements();
         fitToContainer(canvas);
@@ -95,17 +120,17 @@ fetch('./songs.json')
             }, limit);
         }
 
-        function lights(channel, turnOn) {
-            if (channel === undefined) {
+        function lights(channelId, turnOn, calculatedBrightness) {
+            if (channelId === undefined) {
                 return;
             }
-            statusHistory[channel].push(turnOn);
-        
-            if (false === turnOn && turnOn === lastStatus[channel]) {
+            statusHistory[channelId].push(turnOn);
+            
+            if (false === turnOn && turnOn === lastStatus[channelId]) {
                 return;
             }
-            lastStatus[channel] = turnOn;
-
+            lastStatus[channelId] = turnOn;
+            let channel = channels[channelId];
             let turn = turnOn ? 'on': 'off';
             let timer = turnOn ? '&timer=1' : '';
             let requestOptions = {
@@ -113,8 +138,13 @@ fetch('./songs.json')
                 redirect: 'follow',
                 mode: 'no-cors'
             };
+
+            let brightness = '';
+            if (channel.type && calculatedBrightness !== undefined) {
+                brightness = `&brightness=${calculatedBrightness}`;
+            }
             
-            fetch(`http://${ipRange}.${channels[channel].ip}/relay/0?turn=${turn}${timer}`, requestOptions)
+            fetch(`http://${ipRangePrefix}.${channel.ip}/${shellyEndPoint(channel.type)}/0?turn=${turn}${timer}${brightness}`, requestOptions)
                 .then(response => response.text())
                 // .then(result => console.log(result))
                 .catch(error => console.log('error', error));
@@ -170,10 +200,16 @@ fetch('./songs.json')
                     }
                 }
                 
-                let turnOn = (Math.floor(channelValuesSum / channelValuesCount) >= channelThreshold);
+                let calculatedValue = Math.floor(channelValuesSum / channelValuesCount);
+                let turnOn = (calculatedValue >= channelThreshold);
+                let calculatedBrightness;
+                if (channels[lastCalculatedChannel].type === 'dimmer2') {
+                    calculatedBrightness = Math.ceil((calculatedValue / 256) * 100);
+                }
+
                 fillData(lastCalculatedChannel, `${Math.floor(channelValuesSum / channelValuesCount)} - ${channelThreshold}`);
-                // throttle(console.info, 50, channel + 10, lastCalculatedChannel, channelValuesSum, channelValuesCount, channels[channel].threshold, Math.floor(channelValuesSum / channelValuesCount));
-                throttle(lights, 100, lastCalculatedChannel, turnOn);
+                // throttle(console.info, 50, lastCalculatedChannel + 10, lastCalculatedChannel, channelValuesSum, channelValuesCount, channels[channel].threshold, Math.floor(channelValuesSum / channelValuesCount));
+                throttle(lights, 100, lastCalculatedChannel, turnOn, calculatedBrightness);
                 channelValuesCount = 1;
                 channelValuesSum = 0;
             }

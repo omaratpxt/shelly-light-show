@@ -1,30 +1,35 @@
 [
     {
         "ip": "11",
+        "type": "dimmer2",
         "color": "#DC143C",
         "threshold": 165,
         "name": "room-1"
     },
     {
         "ip": "12",
+        "type": "shelly1",
         "color": "#FFA500",
         "threshold": 160,
         "name": "room-2"
     },
     {
         "ip": "13",
+        "type": "shelly1pm",
         "color": "#228B22",
         "threshold": 130,
         "name": "room-3"
     },
     {
         "ip": "14",
+        "type": "dimmer2",
         "color": "#00FF7F",
         "threshold": 127,
         "name": "room-4"
     },
     {
         "ip": "15",
+        "type": "shelly1",
         "color": "#1E90FF",
         "threshold": 100,
         "name": "room-5"
