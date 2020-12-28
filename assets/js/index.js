@@ -6,11 +6,11 @@ const analyserSize = 2048;
 const maxAudioFrequency = 280;
 const audioElement = document.getElementById("source");
 const songsSelectorElement = document.getElementById('list-of-songs');
+const AudioContext = window.AudioContext || window.webkitAudioContext;
 
 fetch('./songs.json')
 .then(response => response.json())
 .then(songs => {
-
     songs.forEach((song, index) => {
         let option = document.createElement("option");
         option.value = song.src;
@@ -26,7 +26,6 @@ fetch('./songs.json')
 
         audioElement.src = event.target.value;
     });
-        
     
     if (songs.length === 0) {
         return;
@@ -40,7 +39,7 @@ fetch('./songs.json')
     const analyser = audioContext.createAnalyser();
     analyser.fftSize = analyserSize;
     source.connect(analyser);
-    //this connects our music back to the default output, such as your //speakers 
+    // this connects our music back to the default output, such as your //speakers 
     source.connect(audioContext.destination);
     let audioData = new Uint8Array(analyser.frequencyBinCount);
     let throttleTimeout = [];
@@ -115,7 +114,7 @@ fetch('./songs.json')
                 mode: 'no-cors'
             };
             
-            fetch(`http://${ipRange}.${channels[channel].ip}/relay/0?turn=${turn}${timer}&auth_key=ZjRhdWlk2460697F95C6C70D2F34CF144610EBD71BD3E99BDDE18280252F9C21DD70717CCAE995E16CFBB15F`, requestOptions)
+            fetch(`http://${ipRange}.${channels[channel].ip}/relay/0?turn=${turn}${timer}`, requestOptions)
                 .then(response => response.text())
                 // .then(result => console.log(result))
                 .catch(error => console.log('error', error));
