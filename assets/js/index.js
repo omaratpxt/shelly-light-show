@@ -13,7 +13,7 @@ const shellyEndPoints = {
     },
     light: {
         endpoint: 'light',
-        aliases: ['dimmer2']
+        aliases: ['dimmer1', 'dimmer2', 'shelly1l']
     }
 };
 
@@ -76,9 +76,9 @@ fetch('./songs.json')
 
     fetch('./config.json')
     .then(response => response.json())
-    .then(data => {
-        channels = data.channels;
-        ipRangePrefix = data.ipRangePrefix;
+    .then(config => {
+        channels = config.channels;
+        ipRangePrefix = config.ipRangePrefix;
         percentFactor = 100 / channels.length;
         createDebugElements();
         fitToContainer(canvas);
@@ -110,14 +110,14 @@ fetch('./songs.json')
             debugDivElements[channel].textContent = value;
         }
 
-        function throttle(callable, limit, channel, ...args) {
+        function throttle(callable, delay, channel, ...args) {
             if (throttleTimeout[channel]) {
                 return;
             }
             callable(channel, ...args);
             throttleTimeout[channel] = setTimeout(function() {
                 throttleTimeout[channel] = undefined;
-            }, limit);
+            }, delay);
         }
 
         function lights(channelId, turnOn, calculatedBrightness) {
@@ -189,6 +189,7 @@ fetch('./songs.json')
                 let channelThreshold = channels[lastCalculatedChannel].threshold || threshold;
                 const numberOflastTurnOns = 5;
                 const lastFiveHistoricalStatus = statusHistory[lastCalculatedChannel].slice(-numberOflastTurnOns);
+                const throttleDelay = channels[lastCalculatedChannel].delay || config.defaultDelay || 500;
 
                 if (lastFiveHistoricalStatus.length > 0) {
                     const lastTurnOns = lastFiveHistoricalStatus.reduce((accumulator, currentValue) => accumulator + currentValue) || 0;
@@ -206,10 +207,8 @@ fetch('./songs.json')
                 if (channels[lastCalculatedChannel].type === 'dimmer2') {
                     calculatedBrightness = Math.ceil((calculatedValue / 256) * 100);
                 }
-
                 fillData(lastCalculatedChannel, `${Math.floor(channelValuesSum / channelValuesCount)} - ${channelThreshold}`);
-                // throttle(console.info, 50, lastCalculatedChannel + 10, lastCalculatedChannel, channelValuesSum, channelValuesCount, channels[channel].threshold, Math.floor(channelValuesSum / channelValuesCount));
-                throttle(lights, 100, lastCalculatedChannel, turnOn, calculatedBrightness);
+                throttle(lights, throttleDelay, lastCalculatedChannel, turnOn, calculatedBrightness);
                 channelValuesCount = 1;
                 channelValuesSum = 0;
             }

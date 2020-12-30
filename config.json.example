@@ -1,11 +1,13 @@
 {
     "ipRangePrefix": "192.168.0",
+    "defaultDelay": 300,
     "channels": [
         {
             "ip": "11",
             "type": "dimmer2",
             "color": "#DC143C",
             "threshold": 165,
+            "delay": 100,
             "name": "room-1"
         },
         {
@@ -24,9 +26,10 @@
         },
         {
             "ip": "14",
-            "type": "dimmer2",
+            "type": "dimmer1",
             "color": "#00FF7F",
             "threshold": 127,
+            "delay": 100,
             "name": "room-4"
         },
         {
