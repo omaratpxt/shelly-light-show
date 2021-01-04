@@ -2,7 +2,6 @@ const canvas = document.getElementById("audio-visual");
 const debug = true;
 const threshold = 0; // max 256 / 2
 const analyserSize = 2048;
-const maxAudioFrequency = 280;
 const audioElement = document.getElementById("source");
 const songsSelectorElement = document.getElementById('list-of-songs');
 const AudioContext = window.AudioContext || window.webkitAudioContext;
@@ -16,6 +15,7 @@ const shellyEndPoints = {
         aliases: ['dimmer1', 'dimmer2', 'shelly1l']
     }
 };
+const dimmerables = ['dimmer1', 'dimmer2', 'shelly1l'];
 
 let shellyEndPointsMap = {};
 for (item in shellyEndPoints) {
@@ -69,7 +69,7 @@ fetch('./songs.json')
     let lastStatus = [];
     let statusHistory = [];
     let debugDivElements = [];
-    let ipRangePrefix, channels, channelValuesSum, channelValuesCount, 
+    let maxAudioFrequency, ipRangePrefix, channels, channelValuesSum, channelValuesCount, 
         lastCalculatedChannel, percentFactor,
         debugDivElementsContainer;
     
@@ -77,6 +77,8 @@ fetch('./songs.json')
     fetch('./config.json')
     .then(response => response.json())
     .then(config => {
+        maxAudioFrequency = config.maxAudioFrequency || 280;
+
         channels = config.channels;
         ipRangePrefix = config.ipRangePrefix;
         percentFactor = 100 / channels.length;
@@ -103,7 +105,7 @@ fetch('./songs.json')
             });
         }
 
-        function fillData(channel, value) {
+        function fillHTMLDebugData(channel, value) {
             if (debug !== true) {
                 return;
             }
@@ -139,15 +141,21 @@ fetch('./songs.json')
                 mode: 'no-cors'
             };
 
-            let brightness = '';
-            if (channel.type && calculatedBrightness !== undefined) {
-                brightness = `&brightness=${calculatedBrightness}`;
+            if (channel.devices === undefined) {
+                return;
             }
-            
-            fetch(`http://${ipRangePrefix}.${channel.ip}/${shellyEndPoint(channel.type)}/0?turn=${turn}${timer}${brightness}`, requestOptions)
-                .then(response => response.text())
-                // .then(result => console.log(result))
-                .catch(error => console.log('error', error));
+
+            channel.devices.forEach(async device => {
+                let brightness = '';
+                if (dimmerables.indexOf(channel.type)) {
+                    brightness = `&brightness=${calculatedBrightness}`;
+                }
+                
+                fetch(`http://${ipRangePrefix}.${device.ip}/${shellyEndPoint(device.type)}/0?turn=${turn}${timer}${brightness}`, requestOptions)
+                    .then(response => response.text())
+                    // .then(result => console.log(result))
+                    .catch(error => console.log('error', error));
+            });
         }
 
 
@@ -203,11 +211,9 @@ fetch('./songs.json')
                 
                 let calculatedValue = Math.floor(channelValuesSum / channelValuesCount);
                 let turnOn = (calculatedValue >= channelThreshold);
-                let calculatedBrightness;
-                if (channels[lastCalculatedChannel].type === 'dimmer2') {
-                    calculatedBrightness = Math.ceil((calculatedValue / 256) * 100);
-                }
-                fillData(lastCalculatedChannel, `${Math.floor(channelValuesSum / channelValuesCount)} - ${channelThreshold}`);
+                let calculatedBrightness = Math.ceil((calculatedValue / 256) * 100);
+
+                fillHTMLDebugData(lastCalculatedChannel, `${Math.floor(channelValuesSum / channelValuesCount)} - ${channelThreshold}`);
                 throttle(lights, throttleDelay, lastCalculatedChannel, turnOn, calculatedBrightness);
                 channelValuesCount = 1;
                 channelValuesSum = 0;

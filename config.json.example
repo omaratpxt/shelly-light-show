@@ -1,43 +1,90 @@
 {
     "ipRangePrefix": "192.168.0",
-    "defaultDelay": 300,
+    "defaultDelay": 200,
+    "maxAudioFrequency": 350,
     "channels": [
         {
-            "ip": "11",
-            "type": "dimmer2",
+            "name": "channel1",
             "color": "#DC143C",
             "threshold": 165,
-            "delay": 100,
-            "name": "room-1"
+            "devices": [
+                {
+                    "ip": "11",
+                    "type": "shelly1",
+                    "name": "room-1"
+                }
+            ]
         },
         {
-            "ip": "12",
-            "type": "shelly1",
+            "name": "channel2",
             "color": "#FFA500",
-            "threshold": 160,
-            "name": "room-2"
-        },
-        {
-            "ip": "13",
-            "type": "shelly1pm",
-            "color": "#228B22",
-            "threshold": 130,
-            "name": "room-3"
-        },
-        {
-            "ip": "14",
-            "type": "dimmer1",
-            "color": "#00FF7F",
-            "threshold": 127,
+            "threshold": 180,
             "delay": 100,
-            "name": "room-4"
+            "devices": [
+                {
+                    "ip": "12",
+                    "type": "dimmer2",
+                    "name": "room-2-light-1"
+                },
+                {
+                    "ip": "13",
+                    "type": "dimmer1",
+                    "name": "room-2-light-2"
+                }
+            ]
         },
         {
-            "ip": "15",
-            "type": "shelly1",
+            "name": "channel3",
+            "color": "#DC143C",
+            "threshold": 160,
+            "devices": [
+                {
+                    "ip": "14",
+                    "type": "shelly1pm",
+                    "name": "room-3"
+                }
+            ]
+        },
+        {
+            "name": "channel4",
+            "color": "#228B22",
+            "threshold": 140,
+            "devices": [
+                {
+                    "ip": "15",
+                    "type": "shelly1l",
+                    "name": "room-4"
+                }
+            ]
+        },
+        {
+            "name": "channel5",
+            "color": "#00FF7F",
+            "threshold": 120,
+            "devices":[
+                {
+                    "ip": "16",
+                    "type": "shelly1",
+                    "name": "room-5"
+                }
+            ]
+        },
+        {
+            "name": "channel6",
             "color": "#1E90FF",
             "threshold": 100,
-            "name": "room-5"
+            "devices": [
+                {
+                    "ip": "17",
+                    "type": "shelly1",
+                    "name": "room-6-seeling"
+                },
+                {
+                    "ip": "18",
+                    "type": "shelly1",
+                    "name": "room-6-wall"
+                }
+            ]
         }
     ]
 }
