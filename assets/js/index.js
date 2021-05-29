@@ -2,6 +2,7 @@ const canvas = document.getElementById("audio-visual");
 const debug = true;
 const threshold = 0; // max 256 / 2
 const analyserSize = 2048;
+const numberOflastTurnOns = 5;
 const audioElement = document.getElementById("source");
 const songsSelectorElement = document.getElementById('list-of-songs');
 const AudioContext = window.AudioContext || window.webkitAudioContext;
@@ -195,7 +196,6 @@ fetch('./songs.json')
                     statusHistory[lastCalculatedChannel] = [];
                 }
                 let channelThreshold = channels[lastCalculatedChannel].threshold || threshold;
-                const numberOflastTurnOns = 5;
                 const lastFiveHistoricalStatus = statusHistory[lastCalculatedChannel].slice(-numberOflastTurnOns);
                 const throttleDelay = channels[lastCalculatedChannel].delay || config.defaultDelay || 500;
 
@@ -205,7 +205,7 @@ fetch('./songs.json')
                     if (turnOnsFactor >= 1) {
                         channelThreshold = channelThreshold * 1.5;
                     } else if (turnOnsFactor <= 0.3) {
-                        channelThreshold = channelThreshold * 0.5;
+                        channelThreshold = channelThreshold * 0.8;
                     }
                 }
                 

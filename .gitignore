@@ -1,5 +1,17 @@
+# IDE
 .vscode
+.idea
+
+# Docker data
 .data
+
+# App configs
 config.json
 songs.json
+
+# Media
 *.mp3
+media
+
+# Local setup
+docker-compose.override.yaml
