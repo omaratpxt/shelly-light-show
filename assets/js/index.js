@@ -14,9 +14,14 @@ const shellyEndPoints = {
     light: {
         endpoint: 'light',
         aliases: ['dimmer1', 'dimmer2', 'shelly1l']
+    },
+    color: {
+        endpoint: 'color',
+        aliases: ['rgbw2']
     }
 };
-const dimmerables = ['dimmer1', 'dimmer2', 'shelly1l'];
+const dimmerables = ['dimmer1', 'dimmer2', 'shelly1l','rgbw2'];
+const colorful = ['rgbw2'];
 
 let shellyEndPointsMap = {};
 for (item in shellyEndPoints) {
@@ -30,6 +35,20 @@ for (item in shellyEndPoints) {
  */
 function shellyEndPoint(item) {
     return shellyEndPoints[shellyEndPointsMap[item]].endpoint;
+}
+
+/**
+ * Returns hex string to rgb
+ * @param hex string
+ * @return {{r: number, b: number, g: number}|null}
+ */
+function hexToRgb(hex) {
+    let result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    return result ? {
+        red: parseInt(result[1], 16),
+        green: parseInt(result[2], 16),
+        blue: parseInt(result[3], 16)
+    } : null;
 }
 
 fetch('./songs.json')
@@ -66,13 +85,15 @@ fetch('./songs.json')
     // this connects our music back to the default output, such as your //speakers 
     source.connect(audioContext.destination);
     let audioData = new Uint8Array(analyser.frequencyBinCount);
-    let throttleTimeout = [];
+    let throttleTimer = [];
     let lastStatus = [];
     let statusHistory = [];
     let debugDivElements = [];
     let maxAudioFrequency, ipRangePrefix, channels, channelValuesSum, channelValuesCount, 
         lastCalculatedChannel, percentFactor,
         debugDivElementsContainer;
+    let deviceColors = {};
+    let lastColors = {};
     
 
     fetch('./config.json')
@@ -85,6 +106,32 @@ fetch('./songs.json')
         percentFactor = 100 / channels.length;
         createDebugElements();
         fitToContainer(canvas);
+
+        function initColors(channel) {
+            if (channel.devices === undefined) {
+                return;
+            }
+
+            channel.devices.forEach((device, deviceId) => {
+                if (colorful.indexOf(device.type) === -1 || device.colors === undefined) {
+                    return;
+                }
+                let colorId = `${channel.name}.${deviceId}`;
+                if (Array.isArray(deviceColors[colorId]) !== true) {
+                    deviceColors[colorId] = [];
+                }
+
+                device.colors.forEach((color) => {
+                    let rgbColor = hexToRgb(color);
+
+                    if (rgbColor === null) {
+                        return;
+                    }
+
+                    deviceColors[colorId].push(rgbColor);
+                });
+            });
+        }
 
         function createDebugElements() {
             if (debug !== true) {
@@ -103,6 +150,8 @@ fetch('./songs.json')
 
                 debugDivElements.push(channelNode);
                 debugDivElementsContainer.appendChild(channelNode);
+
+                initColors(channel);
             });
         }
 
@@ -113,14 +162,32 @@ fetch('./songs.json')
             debugDivElements[channel].textContent = value;
         }
 
-        function throttle(callable, delay, channel, ...args) {
-            if (throttleTimeout[channel]) {
+        function throttle(callable, delay, timerId, ...args) {
+            if (throttleTimer[timerId]) {
                 return;
             }
-            callable(channel, ...args);
-            throttleTimeout[channel] = setTimeout(function() {
-                throttleTimeout[channel] = undefined;
+            callable(timerId, ...args);
+            throttleTimer[timerId] = setTimeout(function() {
+                throttleTimer[timerId] = undefined;
             }, delay);
+        }
+
+        function getColors(channelId, deviceId) {
+            let colorId = `${channelId}.${deviceId}`;
+            if (deviceColors === undefined || deviceColors[colorId] === undefined || deviceColors[colorId].length === 0) {
+                return false
+            }
+
+            throttle(function (colorId) {
+                lastColors[colorId] = lastColors[colorId] === undefined ? -1 : parseInt(lastColors[colorId]);
+
+                if (lastColors[colorId] >= deviceColors[colorId].length - 1) {
+                    lastColors[colorId] = -1;
+                }
+                lastColors[colorId]++;
+            }, 1500, colorId);
+
+            return deviceColors[colorId][lastColors[colorId]] || false;
         }
 
         function lights(channelId, turnOn, calculatedBrightness) {
@@ -146,13 +213,20 @@ fetch('./songs.json')
                 return;
             }
 
-            channel.devices.forEach(async device => {
+            channel.devices.forEach(async (device, deviceId) => {
                 let brightness = '';
-                if (dimmerables.indexOf(channel.type)) {
+                let color = '';
+                if (dimmerables.indexOf(device.type) !== -1) {
                     brightness = `&brightness=${calculatedBrightness}`;
                 }
+
+                if (colorful.indexOf(device.type) !== -1) {
+                    let colors = getColors(channel.name, deviceId);
+
+                    color = colors !== false ? `&red=${colors.red}&green=${colors.green}&blue=${colors.blue}` : '';
+                }
                 
-                fetch(`http://${ipRangePrefix}.${device.ip}/${shellyEndPoint(device.type)}/0?turn=${turn}${timer}${brightness}`, requestOptions)
+                fetch(`http://${ipRangePrefix}.${device.ip}/${shellyEndPoint(device.type)}/0?turn=${turn}${timer}${brightness}${color}`, requestOptions)
                     .then(response => response.text())
                     // .then(result => console.log(result))
                     .catch(error => console.log('error', error));
@@ -211,7 +285,7 @@ fetch('./songs.json')
                 
                 let calculatedValue = Math.floor(channelValuesSum / channelValuesCount);
                 let turnOn = (calculatedValue >= channelThreshold);
-                let calculatedBrightness = Math.ceil((calculatedValue / 256) * 100);
+                let calculatedBrightness = Math.ceil((calculatedValue / 256) * 100) || 1;
 
                 fillHTMLDebugData(lastCalculatedChannel, `${Math.floor(channelValuesSum / channelValuesCount)} - ${channelThreshold}`);
                 throttle(lights, throttleDelay, lastCalculatedChannel, turnOn, calculatedBrightness);
