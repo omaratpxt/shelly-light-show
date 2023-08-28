@@ -9,7 +9,7 @@ const AudioContext = window.AudioContext || window.webkitAudioContext;
 const shellyEndPoints = {
     relay: {
         endpoint: 'relay',
-        aliases: ['shelly1', 'shelly1pm']
+        aliases: ['shelly1', 'shelly1pm', 'shellyplus1', 'shellyplus1pm']
     },
     light: {
         endpoint: 'light',
@@ -22,7 +22,7 @@ const shellyEndPoints = {
 };
 const dimmerables = ['dimmer1', 'dimmer2', 'shelly1l','rgbw2'];
 const colorful = ['rgbw2'];
-
+let playingStatus = false;
 let shellyEndPointsMap = {};
 for (item in shellyEndPoints) {
     shellyEndPointsMap[item] = item;
@@ -80,6 +80,7 @@ fetch('./songs.json')
     const source = audioContext.createMediaElementSource(audioElement);
     const canvasContext = canvas.getContext("2d");
     const analyser = audioContext.createAnalyser();
+    const cloudConfig = document.getElementById('cloudConfig');
     analyser.fftSize = analyserSize;
     source.connect(analyser);
     // this connects our music back to the default output, such as your //speakers 
@@ -94,6 +95,11 @@ fetch('./songs.json')
         debugDivElementsContainer;
     let deviceColors = {};
     let lastColors = {};
+    let requestOptions = {
+        method: 'GET',
+        redirect: 'follow',
+        mode: 'no-cors'
+    };
     
 
     fetch('./config.json')
@@ -107,6 +113,47 @@ fetch('./songs.json')
         createDebugElements();
         fitToContainer(canvas);
 
+        function changeCloudSetting(cloudConfig, channels) {
+            if (Array.isArray(channels) !== true) {
+                return;
+            }
+
+            let isCloudEnabledNumeric = cloudConfig ? '1' : '0';
+            let isCloudEnabled = cloudConfig ? 'true' : 'false';
+            let path;
+
+            channels.forEach((channel) => {
+                if (channel.devices === undefined) {
+                    return;
+                }
+
+                channel.devices.forEach((device) => {
+                    if (device.cloud !== undefined) {
+                        device.cloud = cloudConfig;
+                    }
+
+                    if (device.type.includes('plus') !== true) {
+                        path = `/settings/cloud?enabled=${isCloudEnabledNumeric}`
+                    } else {
+                        path = `/rpc/Cloud.SetConfig?config={"enable":${isCloudEnabled}}`
+                    }
+
+                    fetch(`http://${ipRangePrefix}.${device.ip}${path}`, requestOptions)
+                    .then(response => response.text())
+                    .catch(error => console.log('error', error));
+                });
+            });
+        }
+
+        
+        cloudConfig.addEventListener('change', (event) => {
+            if (playingStatus === true && event.currentTarget.checked === true) {
+                event.currentTarget.checked = false;
+                return;
+            }
+            changeCloudSetting(event.currentTarget.checked, channels);
+        });
+        
         function initColors(channel) {
             if (channel.devices === undefined) {
                 return;
@@ -203,11 +250,6 @@ fetch('./songs.json')
             let channel = channels[channelId];
             let turn = turnOn ? 'on': 'off';
             let timer = turnOn ? '&timer=1' : '';
-            let requestOptions = {
-                method: 'GET',
-                redirect: 'follow',
-                mode: 'no-cors'
-            };
 
             if (channel.devices === undefined) {
                 return;
@@ -223,7 +265,7 @@ fetch('./songs.json')
                 if (colorful.indexOf(device.type) !== -1) {
                     let colors = getColors(channel.name, deviceId);
 
-                    color = colors !== false ? `&red=${colors.red}&green=${colors.green}&blue=${colors.blue}` : '';
+                    color = colors !== false ? `&red=${colors.red}&green=${colors.green}&blue=${colors.blue}&white=0` : '';
                 }
                 
                 fetch(`http://${ipRangePrefix}.${device.ip}/${shellyEndPoint(device.type)}/0?turn=${turn}${timer}${brightness}${color}`, requestOptions)
@@ -323,10 +365,20 @@ fetch('./songs.json')
         }
 
         audioElement.onplay = () => {
+            playingStatus = true;
+            changeCloudSetting(!playingStatus, channels);
+            cloudConfig.checked = !playingStatus;
             audioContext.resume();
         }
 
+        audioElement.onpause = () => {
+            playingStatus = false;
+            changeCloudSetting(!playingStatus, channels);
+            cloudConfig.checked = !playingStatus;
+        }
+
         audioElement.onended = () => {
+            playingStatus = false;
             if (songsSelectorElement.selectedIndex >= (songs.length - 1)) {
                 if (!document.getElementById('replay-songs-list').checked) {
                     return;
@@ -345,7 +397,7 @@ fetch('./songs.json')
         }
 
         requestAnimationFrame(loopingFunction);
-    }).catch(error => {
+    }).then().catch(error => {
         console.error('Error:', error);
     });
 }).catch(error => {
