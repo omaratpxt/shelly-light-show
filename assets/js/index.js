@@ -91,7 +91,7 @@ fetch('./songs.json')
     let statusHistory = [];
     let debugDivElements = [];
     let maxAudioFrequency, ipRangePrefix, channels, channelValuesSum, channelValuesCount, 
-        lastCalculatedChannel, percentFactor,
+        lastCalculatedChannel, percentFactor, defaultDelay,
         debugDivElementsContainer;
     let deviceColors = {};
     let lastColors = {};
@@ -105,6 +105,7 @@ fetch('./songs.json')
     fetch('./config.json')
     .then(response => response.json())
     .then(config => {
+        defaultDelay = isNaN(config.defaultDelay) === false && config.defaultDelay >= 100 ? config.defaultDelay : 500;
         maxAudioFrequency = config.maxAudioFrequency || 280;
 
         channels = config.channels;
@@ -313,7 +314,7 @@ fetch('./songs.json')
                 }
                 let channelThreshold = channels[lastCalculatedChannel].threshold || threshold;
                 const lastFiveHistoricalStatus = statusHistory[lastCalculatedChannel].slice(-numberOflastTurnOns);
-                const throttleDelay = channels[lastCalculatedChannel].delay || config.defaultDelay || 500;
+                const throttleDelay = channels[lastCalculatedChannel].delay || defaultDelay || 500;
 
                 if (lastFiveHistoricalStatus.length > 0) {
                     const lastTurnOns = lastFiveHistoricalStatus.reduce((accumulator, currentValue) => accumulator + currentValue) || 0;
