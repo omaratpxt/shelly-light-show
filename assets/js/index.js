@@ -5,6 +5,8 @@ const analyserSize = 2048;
 const numberOflastTurnOns = 5;
 const audioElement = document.getElementById("source");
 const songsSelectorElement = document.getElementById('list-of-songs');
+const activateLightsShow = document.getElementById('activate-lights-show');
+const cloudConfig = document.getElementById('cloudConfig');
 const AudioContext = window.AudioContext || window.webkitAudioContext;
 const shellyEndPoints = {
     relay: {
@@ -51,6 +53,14 @@ function hexToRgb(hex) {
     } : null;
 }
 
+/**
+ * Retruns the status of the light show
+ * @returns {boolean} true if the light show is active
+ */
+function isTheLightShowActive() {
+    return activateLightsShow.checked;
+}
+
 fetch('./songs.json')
 .then(response => response.json())
 .then(songs => {
@@ -80,7 +90,6 @@ fetch('./songs.json')
     const source = audioContext.createMediaElementSource(audioElement);
     const canvasContext = canvas.getContext("2d");
     const analyser = audioContext.createAnalyser();
-    const cloudConfig = document.getElementById('cloudConfig');
     analyser.fftSize = analyserSize;
     source.connect(analyser);
     // this connects our music back to the default output, such as your //speakers 
@@ -100,7 +109,6 @@ fetch('./songs.json')
         redirect: 'follow',
         mode: 'no-cors'
     };
-    
 
     fetch('./config.json')
     .then(response => response.json())
@@ -114,6 +122,12 @@ fetch('./songs.json')
         createDebugElements();
         fitToContainer(canvas);
 
+        /**
+         * Changes the cloud setting for the devices
+         * @param {boolean} cloudConfig 
+         * @param {Array} channels 
+         * @returns 
+         */
         function changeCloudSetting(cloudConfig, channels) {
             if (Array.isArray(channels) !== true) {
                 return;
@@ -148,13 +162,19 @@ fetch('./songs.json')
 
         
         cloudConfig.addEventListener('change', (event) => {
-            if (playingStatus === true && event.currentTarget.checked === true) {
+            if (playingStatus === true && isTheLightShowActive() && event.currentTarget.checked === true) {
+                changeCloudSetting(false, channels);
                 event.currentTarget.checked = false;
                 return;
             }
             changeCloudSetting(event.currentTarget.checked, channels);
         });
         
+        /**
+         * Initializes the colors for the devices
+         * @param {object} channel 
+         * @returns 
+         */
         function initColors(channel) {
             if (channel.devices === undefined) {
                 return;
@@ -181,6 +201,10 @@ fetch('./songs.json')
             });
         }
 
+        /**
+         * Creates the debug elements
+         * @returns void
+         */
         function createDebugElements() {
             if (debug !== true) {
                 return;
@@ -203,6 +227,12 @@ fetch('./songs.json')
             });
         }
 
+        /**
+         * Fill the debug data
+         * @param {object} channel 
+         * @param {string} value 
+         * @returns void
+         */
         function fillHTMLDebugData(channel, value) {
             if (debug !== true) {
                 return;
@@ -210,6 +240,14 @@ fetch('./songs.json')
             debugDivElements[channel].textContent = value;
         }
 
+        /**
+         * Throttle function
+         * @param {function} callable
+         * @param {number} delay
+         * @param {string} timerId
+         * @param {array} args
+         * @returns void
+         */
         function throttle(callable, delay, timerId, ...args) {
             if (throttleTimer[timerId]) {
                 return;
@@ -220,6 +258,12 @@ fetch('./songs.json')
             }, delay);
         }
 
+        /**
+         * Get the colors of the device
+         * @param {string} channelId
+         * @param {string} deviceId
+         * @returns {mixed}
+         */
         function getColors(channelId, deviceId) {
             let colorId = `${channelId}.${deviceId}`;
             if (deviceColors === undefined || deviceColors[colorId] === undefined || deviceColors[colorId].length === 0) {
@@ -238,6 +282,13 @@ fetch('./songs.json')
             return deviceColors[colorId][lastColors[colorId]] || false;
         }
 
+        /**
+         * Turns on/off the lights
+         * @param {string} channelId
+         * @param {boolean} turnOn
+         * @param {number} calculatedBrightness
+         * @returns void
+         */
         function lights(channelId, turnOn, calculatedBrightness) {
             if (channelId === undefined) {
                 return;
@@ -276,7 +327,10 @@ fetch('./songs.json')
             });
         }
 
-
+        /**
+         * Loop to draw the animation
+         * @returns void
+         */
         function loopingFunction() {
             requestAnimationFrame(loopingFunction);
             analyser.getByteFrequencyData(audioData);
@@ -287,6 +341,11 @@ fetch('./songs.json')
             draw(audioData);
         }
 
+        /**
+         * Calculates the channel
+         * @param {number} bar
+         * @returns {number}
+         */
         function calculateChannel(bar) {
             const percent = Math.floor((bar / (maxAudioFrequency)) * 100);
             let channel = Math.ceil(percent / percentFactor) - 1;
@@ -300,8 +359,15 @@ fetch('./songs.json')
             return channel;
         }
 
+        /**
+         * Draws the light show
+         * @param {number} channel
+         * @param {number} audioValue
+         * @param {number} bar
+         * @returns void
+         */
         function drawLightShow(channel, audioValue, bar) {
-            if (document.getElementById('activate-lights-show').checked !== true) {
+            if (isTheLightShowActive() !== true) {
                 return;
             }
             if (channel > lastCalculatedChannel || bar === maxAudioFrequency) {
@@ -340,11 +406,21 @@ fetch('./songs.json')
             lastCalculatedChannel = channel;
         }
 
+        /**
+         * Fits the canvas to the container
+         * @param {object} canvas
+         * @returns void
+         */
         function fitToContainer(canvas) {
             canvas.width = canvas.offsetWidth;
             canvas.height = canvas.offsetHeight;
         }
 
+        /**
+         * Draws the animation
+         * @param {array} audioData
+         * @returns void
+         */
         function draw(audioData) {
             audioData = [...audioData]
             canvasContext.clearRect(0,0,canvas.width, canvas.height);
@@ -367,6 +443,9 @@ fetch('./songs.json')
 
         audioElement.onplay = () => {
             playingStatus = true;
+            if (isTheLightShowActive() !== true) {
+                return;
+            }
             changeCloudSetting(!playingStatus, channels);
             cloudConfig.checked = !playingStatus;
             audioContext.resume();
@@ -374,6 +453,10 @@ fetch('./songs.json')
 
         audioElement.onpause = () => {
             playingStatus = false;
+
+            if (isTheLightShowActive() !== true) {
+                return;
+            }
             changeCloudSetting(!playingStatus, channels);
             cloudConfig.checked = !playingStatus;
         }
