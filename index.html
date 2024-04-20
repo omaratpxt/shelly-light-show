@@ -8,15 +8,9 @@
         <!-- .container is main centered wrapper -->
         <div class="container u-full-width u-max-full-width" id="main-container">
             <div class="row">
-                <div class="eight columns">
+                <div class="twelve columns">
                     <label for="list-of-songs">Choose a song:</label>
                     <select class="u-full-width" id="list-of-songs"></select>
-                </div>
-                <div class="four columns">
-                    <label>
-                        <input id="replay-songs-list" type="checkbox" checked />
-                        <span class="label-body">Replay</span>
-                    </label>
                 </div>
             </div>
             <!-- columns should be the immediate child of a .row -->
@@ -27,7 +21,10 @@
             </div>
             <div class="row">
                 <div class="twelve columns">
-                    <canvas id="audio-visual" style="width: 100%; height: 300px;"></canvas>
+                    <label>
+                        <input id="replay-songs-list" type="checkbox" checked />
+                        <span class="label-body">Replay</span>
+                    </label>
                 </div>
             </div>
             <div class="row">
@@ -44,6 +41,20 @@
                         <input id="cloudConfig" type="checkbox" checked />
                         <span class="label-body">Activate Cloud Config</span>
                     </label>
+                </div>
+            </div>
+            <div class="row">
+                <div class="twelve columns">
+                    <label>
+                        <input id="defaultDelay" type="range" min="80" max="500" />
+                        <input id="defaultDelayNumber" type="number"  min="80" max="500" />
+                        <span class="label-body>">Default Delay</span>
+                    </label>
+                </div>
+            </div>
+            <div class="row">
+                <div class="twelve columns">
+                    <canvas id="audio-visual" style="width: 100%; height: 300px;"></canvas>
                 </div>
             </div>
         </div>

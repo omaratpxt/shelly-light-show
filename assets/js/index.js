@@ -7,6 +7,8 @@ const audioElement = document.getElementById("source");
 const songsSelectorElement = document.getElementById('list-of-songs');
 const activateLightsShow = document.getElementById('activate-lights-show');
 const cloudConfig = document.getElementById('cloudConfig');
+const defaultDelayElement = document.getElementById('defaultDelay');
+const defaultDelayNumberElement = document.getElementById('defaultDelayNumber');
 const AudioContext = window.AudioContext || window.webkitAudioContext;
 const shellyEndPoints = {
     relay: {
@@ -80,6 +82,7 @@ fetch('./songs.json')
         audioElement.src = event.target.value;
     });
     
+    
     if (songs.length === 0) {
         return;
     }
@@ -113,7 +116,8 @@ fetch('./songs.json')
     fetch('./config.json')
     .then(response => response.json())
     .then(config => {
-        defaultDelay = isNaN(config.defaultDelay) === false && config.defaultDelay >= 100 ? config.defaultDelay : 500;
+        defaultDelay = isNaN(config.defaultDelay) === false && config.defaultDelay >= 80 ? config.defaultDelay : 500;
+        defaultDelayElement.value = defaultDelayNumberElement.value = defaultDelay;
         maxAudioFrequency = config.maxAudioFrequency || 280;
 
         channels = config.channels;
@@ -121,6 +125,17 @@ fetch('./songs.json')
         percentFactor = 100 / channels.length;
         createDebugElements();
         fitToContainer(canvas);
+
+        /**
+         * Changes the default delay value
+         * @param {number} value
+         * @param {object} mirroredDefaultDelayElement
+         * @returns 
+         */
+        function changeDefaultDelay(value, mirroredDefaultDelayElement) {
+            defaultDelay = isNaN(value) === false && value >= 80 ? value : 500;
+            mirroredDefaultDelayElement.value = defaultDelay;
+        }
 
         /**
          * Changes the cloud setting for the devices
@@ -168,6 +183,13 @@ fetch('./songs.json')
                 return;
             }
             changeCloudSetting(event.currentTarget.checked, channels);
+        });
+
+        defaultDelayElement.addEventListener('change', (event) => {
+            changeDefaultDelay(event.currentTarget.value, defaultDelayNumberElement);
+        });
+        defaultDelayNumberElement.addEventListener('change', (event) => {
+            changeDefaultDelay(event.currentTarget.value, defaultDelayElement);
         });
         
         /**
