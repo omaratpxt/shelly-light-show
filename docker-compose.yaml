@@ -2,7 +2,7 @@ version: '3.3'
 
 services:
   nginx:
-    image: nginx:1.19-alpine
+    image: nginx:1.27-alpine
     volumes:
       - .:/usr/share/nginx/html:cached
       - ./.data/logs/nginx:/var/log/nginx:delegated
